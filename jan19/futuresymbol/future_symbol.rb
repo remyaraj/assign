@@ -1,0 +1,61 @@
+# Future symbol generation
+#Broker classes included
+#randomization of future symbols
+
+require "chronic"
+
+$month = Hash[1=>"F",2=>"G",3=>"H",4=>"J",5=>"k",6=>"M",7=>"N",8=>"Q",9=>"U",10=>"V",11=>"X",12=>"Z"]
+
+class FutureSymbol
+	def initialize
+		@future_symbol = Hash[0=>"",1=>"",2=>""]
+		@time = Time.new
+		@prefix = ""
+		@underlying_symbol=""
+		@expiry_date = Chronic.parse("Friday of third week of #{@time.month}")
+		@expiry_month=""
+		@year = @time.year
+		@mod = 2000
+		@current_date = Chronic.parse("now")
+		@es_case = ["H","M","U","Z"]
+		@gc_case = ["G","J","M","Q","V","X","Z"]
+	end
+	def expired?
+		k = true
+		k = false if @current_date<@expiry_date
+		return k
+	end
+	def element?(element,month)
+		k = false
+		k = true if element == month
+		return k
+	end
+	def expiry_month?(mon,case_set)
+		case_set.each{|element|return true if element?(element,$month[mon])}
+		return false
+	end
+	def case_value(mon,case_set,underlying_symbol)
+		i=mon
+		12.times do
+			break if expiry_month?(i,case_set)
+			if i==12
+				i=0
+			else
+				i=i+1
+			end
+		end
+		@expiry_month = $month[i]
+		symbol = @prefix + underlying_symbol + @expiry_month + (@year.to_i() % @mod).to_s()
+		return symbol
+	end
+	def get_symbol	
+		k = @time.month
+		k = k+1 if expired?
+		@future_symbol[0] = case_value(k,@es_case,"ES")
+		@future_symbol[1] = case_value(k,@es_case,"YM")
+		@future_symbol[2] = case_value(k,@gc_case,"GC")
+		
+		return @future_symbol[rand(@future_symbol.length)]
+	end
+end
+
